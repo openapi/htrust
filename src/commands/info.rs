@@ -17,3 +17,15 @@ pub fn execute(sandbox: bool) -> Result<()> {
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn info_runs_without_environment_tokens() {
+        // info does not depend on env vars; just verify it returns Ok.
+        assert!(execute(false).is_ok());
+        assert!(execute(true).is_ok());
+    }
+}

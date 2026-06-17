@@ -41,3 +41,27 @@ impl ApiClient {
         Ok(body)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_client(sandbox: bool) -> ApiClient {
+        ApiClient {
+            http: reqwest::Client::new(),
+            sandbox,
+        }
+    }
+
+    #[test]
+    fn base_url_returns_production_when_sandbox_is_false() {
+        let client = make_client(false);
+        assert_eq!(client.base_url("https://prod.example", "https://sandbox.example"), "https://prod.example");
+    }
+
+    #[test]
+    fn base_url_returns_sandbox_when_sandbox_is_true() {
+        let client = make_client(true);
+        assert_eq!(client.base_url("https://prod.example", "https://sandbox.example"), "https://sandbox.example");
+    }
+}

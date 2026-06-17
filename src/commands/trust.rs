@@ -44,3 +44,40 @@ fn endpoint(kind: ClaimKind, detail: bool) -> &'static str {
         (ClaimKind::Url, _) => "url-advanced",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn mobile_endpoint_default() {
+        assert_eq!(endpoint(ClaimKind::Mobile, false), "mobile-start");
+    }
+
+    #[test]
+    fn mobile_endpoint_detail() {
+        assert_eq!(endpoint(ClaimKind::Mobile, true), "mobile-advanced");
+    }
+
+    #[test]
+    fn email_endpoint_default() {
+        assert_eq!(endpoint(ClaimKind::Email, false), "email-start");
+    }
+
+    #[test]
+    fn email_endpoint_detail() {
+        assert_eq!(endpoint(ClaimKind::Email, true), "email-advanced");
+    }
+
+    #[test]
+    fn ip_endpoint_is_always_advanced() {
+        assert_eq!(endpoint(ClaimKind::Ip, false), "ip-advanced");
+        assert_eq!(endpoint(ClaimKind::Ip, true), "ip-advanced");
+    }
+
+    #[test]
+    fn url_endpoint_is_always_advanced() {
+        assert_eq!(endpoint(ClaimKind::Url, false), "url-advanced");
+        assert_eq!(endpoint(ClaimKind::Url, true), "url-advanced");
+    }
+}
