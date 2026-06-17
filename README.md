@@ -4,7 +4,7 @@ Open Source Trust for Humans.
 
 `htrust` is a Rust CLI for Linux sysadmins, shell scripts, and agentic tooling that need to check whether real-world information can be trusted before acting on it.
 
-The interface is intentionally flat: one command per claim type, one positional value to check, JSON on stdout.
+The interface is intentionally flat: one command per claim type, one positional value to check, a short status on stdout and a meaningful exit code.
 
 ---
 
@@ -12,6 +12,7 @@ The interface is intentionally flat: one command per claim type, one positional 
 
 - [Installation](#installation)
 - [Configuration](#configuration)
+- [Static validation first](#static-validation-first)
 - [Commands](#commands)
   - [`htrust info`](#htrust-info)
   - [`htrust mobile`](#htrust-mobile)
@@ -85,6 +86,30 @@ A ready-to-edit example is provided in `.env.example`.
 
 ---
 
+## Static validation first
+
+`htrust` never calls the remote trust API unless the input passes a local stack of static validators. Every command runs format, checksum and sanity checks before any network request is made.
+
+Why? Because trust decisions should be cheap, fast and privacy-friendly. If an email is syntactically broken, a phone number is not E.164, an IP is not parseable or a URL has no valid scheme, the tool rejects it immediately without leaking the value to a third party and without consuming API quota.
+
+```bash
+htrust email not-an-email
+# error: invalid email format: not-an-email
+```
+
+Local validators currently cover:
+
+| Kind | Static checks |
+|------|---------------|
+| `mobile` | E.164 format (`+` followed by 2-15 digits) |
+| `email` | Basic RFC-like structure (`local@domain.tld`) |
+| `ip` | Valid IPv4 or IPv6 address |
+| `url` | Valid URL with `http` or `https` scheme |
+
+This "validate before you trust" principle is a core design goal of htrust.
+
+---
+
 ## Commands
 
 ### `htrust info`
@@ -112,18 +137,22 @@ htrust runtime
 Verifies a mobile phone number.
 
 ```bash
-# basic check
+# basic check — prints a short status and sets the exit code
 htrust mobile +393331234567
 
-# advanced / detailed check
+# advanced / detailed endpoint
 htrust mobile +393331234567 --detail
+
+# full JSON response
+htrust mobile +393331234567 --json
+htrust mobile +393331234567 --full
 ```
 
 | Argument | Description |
 |----------|-------------|
 | `VALUE` | Phone number with international prefix (e.g. `+393331234567`) |
 
-`--detail` selects the richer endpoint when the API exposes both a base and an advanced check.
+`--detail` selects the richer endpoint when the API exposes both a base and an advanced check. `--json` / `--full` print the full API response instead of the short status.
 
 ---
 
@@ -134,6 +163,7 @@ Verifies an email address.
 ```bash
 htrust email info@example.com
 htrust email info@example.com --detail
+htrust email info@example.com --json
 ```
 
 | Argument | Description |
@@ -148,6 +178,7 @@ Verifies an IP address.
 
 ```bash
 htrust ip 8.8.8.8
+htrust ip 8.8.8.8 --json
 ```
 
 | Argument | Description |
@@ -164,6 +195,7 @@ Verifies a URL.
 
 ```bash
 htrust url https://example.com
+htrust url https://example.com --json
 ```
 
 | Argument | Description |
@@ -179,6 +211,8 @@ Like `ip`, `--detail` is accepted but maps to the advanced endpoint.
 | Flag | Description |
 |------|-------------|
 | `--sandbox` | Use the sandbox environment (`test.trust.openapi.com`) and `OPENAPI_SANDBOX_TOKEN` |
+| `--detail` / `--details` | Use the richer endpoint where available (synonyms) |
+| `--json`, `--full` | Print the full API response as JSON |
 | `-h`, `--help` | Print help |
 | `-V`, `--version` | Print version |
 
@@ -187,6 +221,7 @@ Examples:
 ```bash
 htrust --sandbox info
 htrust --sandbox mobile +393331234567 --detail
+htrust email info@example.com --json
 ```
 
 ---
@@ -223,22 +258,40 @@ https://trust.openapi.com/mobile-start/+393331234567
 
 | Code | Meaning |
 |------|---------|
-| `0` | Success |
-| `1` | CLI usage error or API error |
+| `0` | Trusted result (`valid` / `verified`) or neutral/no-op |
+| `1` | Distrusted result (`risky` / `invalid`), API error, or CLI usage error |
 | `2` | Missing required environment variable or empty token |
+
+This makes htrust composable in shell scripts:
+
+```bash
+if htrust email info@example.com >/dev/null; then
+  echo "Email looks trustworthy"
+else
+  echo "Email is risky or invalid"
+fi
+```
 
 ---
 
 ## Output format
 
-All trust commands print a JSON object to stdout. The exact schema depends on the OpenAPI trust endpoint.
+By default trust commands print a short status string to stdout:
 
-Example (schema may vary):
+```bash
+$ htrust email info@example.com
+valid
+```
 
-```json
+The status mirrors the API's own assessment (e.g. `valid`, `risky`, `invalid`). Use `--json` or `--full` to see the complete API response:
+
+```bash
+$ htrust email info@example.com --json
 {
-  "status": "verified",
-  "trust_score": 94
+  "data": { ... },
+  "error": null,
+  "message": "",
+  "success": true
 }
 ```
 
@@ -357,7 +410,9 @@ make test
 |--------|-------------|
 | `make` or `make build` | Build the release binary |
 | `make install` | Build and install to `~/.local/bin` (or `$PREFIX/bin`) |
-| `make test` | Run the Bash test suite |
+| `make test` | Run Rust unit tests, smoke tests and assert tests |
+| `make test-smoke` | Run only the practical smoke tests |
+| `make test-asserts` | Run only the negative/side-case assert tests |
 | `make clean` | Remove build artifacts |
 
 ---
