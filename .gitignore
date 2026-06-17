@@ -1,0 +1,6 @@
+.idea/
+target/
+.env
+.env.*
+!.env.example
+openapi-cli/
