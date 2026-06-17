@@ -5,10 +5,11 @@
 
 set -euo pipefail
 
-BIN=./target/release/htrust
-[ -x "$BIN" ] || cargo build --release
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+[ -x "$PROJECT_ROOT/target/release/htrust" ] || cargo build --release
+export PATH="$PROJECT_ROOT/target/release:$PATH"
 
 set -x
 
-$BIN info
-$BIN --sandbox info
+htrust info
+htrust --sandbox info
