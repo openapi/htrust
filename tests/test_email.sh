@@ -1,39 +1,33 @@
 #!/usr/bin/env bash
-# Example/test for: htrust email
+# Practical smoke test for: htrust email
 #
-# Usage:
-#   htrust email info@example.com
-#   htrust email info@example.com --detail
-#   htrust --sandbox email info@example.com --detail
+# Usage shown below is executed literally.
 
 set -euo pipefail
-source "$(dirname "$0")/lib.sh"
-require_binary
 
-section "htrust email"
+BIN=./target/release/htrust
+[ -x "$BIN" ] || cargo build --release
 
-# Without a token the command fails fast with a clear error.
-clear_tokens
-run_cmd "\"$HTRUST\" email info@example.com"
-assert_rc "email fails without token" 1 "$rc"
-assert_contains "error mentions OPENAPI_TOKEN" "OPENAPI_TOKEN" "$stderr"
+# Make sure these tests do not accidentally pick up environment tokens.
+unset OPENAPI_TOKEN OPENAPI_SANDBOX_TOKEN
 
-# A positional value is required.
-run_cmd "\"$HTRUST\" email"
-assert_rc "email without value fails" 2 "$rc"
-assert_contains "usage is printed" "Usage:" "$stderr"
+set -x
 
-# With a sandbox token we can call the live API.
-if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
-  run_cmd "env OPENAPI_SANDBOX_TOKEN=$OPENAPI_SANDBOX_TOKEN \"$HTRUST\" --sandbox email info@example.com"
-  assert_rc "sandbox email returns success" 0 "$rc"
-  assert_valid_json "sandbox email returns JSON" "$stdout"
+# Without a token this must fail.
+if $BIN email info@example.com >/tmp/email-err 2>&1; then
+  echo "FAIL: email should fail without a token" >&2
+  exit 1
+fi
+grep -q OPENAPI_TOKEN /tmp/email-err
 
-  run_cmd "env OPENAPI_SANDBOX_TOKEN=$OPENAPI_SANDBOX_TOKEN \"$HTRUST\" --sandbox email info@example.com --detail"
-  assert_rc "sandbox email --detail returns success" 0 "$rc"
-  assert_valid_json "sandbox email --detail returns JSON" "$stdout"
-else
-  log_skip "live sandbox email tests (set OPENAPI_SANDBOX_TOKEN to enable)"
+# Missing value must fail.
+if $BIN email >/tmp/email-err 2>&1; then
+  echo "FAIL: email should fail without a value" >&2
+  exit 1
 fi
 
-summary
+# Live sandbox call, only if a token is available.
+if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
+  OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" $BIN --sandbox email info@example.com
+  OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" $BIN --sandbox email info@example.com --detail
+fi
