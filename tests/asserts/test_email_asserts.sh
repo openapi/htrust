@@ -24,6 +24,11 @@ run "$BIN email info@example.com --bad-flag"
 assert_rc "unknown flag returns 2" 2
 assert_stderr_contains "unknown flag shows error" "error:"
 
+# Static validation rejects bad input before the API is called.
+run "$BIN email not-an-email"
+assert_rc "invalid email returns 1" 1
+assert_stderr_contains "error mentions invalid format" "invalid email format"
+
 # Live JSON validation when a sandbox token is available.
 if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
   run "OPENAPI_SANDBOX_TOKEN=$OPENAPI_SANDBOX_TOKEN $BIN --sandbox email info@example.com"

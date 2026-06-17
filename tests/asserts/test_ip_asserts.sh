@@ -24,6 +24,11 @@ run "$BIN ip 8.8.8.8 --bad-flag"
 assert_rc "unknown flag returns 2" 2
 assert_stderr_contains "unknown flag shows error" "error:"
 
+# Static validation rejects bad input before the API is called.
+run "$BIN ip not-an-ip"
+assert_rc "invalid ip returns 1" 1
+assert_stderr_contains "error mentions invalid format" "invalid ip format"
+
 # Live JSON validation when a sandbox token is available.
 if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
   run "OPENAPI_SANDBOX_TOKEN=$OPENAPI_SANDBOX_TOKEN $BIN --sandbox ip 8.8.8.8"
