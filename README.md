@@ -4,42 +4,37 @@ Open Source Trust for Humans.
 
 `htrust` is a Rust CLI for Linux sysadmins, shell scripts, and agentic tooling that need to check whether real-world information can be trusted before acting on it.
 
-The first cut is intentionally small:
-
-- reuse the `trust.openapi.com` subset from `openapi-cli`
-- expose a clean CLI surface for automation
-- support `verify` and `check` as synonyms, plus `v` and `c`
-- prepare MinIO bucket conventions for claims, evidence, assessments, and artifacts
-- keep the local `openapi-cli` checkout out of Git
+The interface is intentionally flat: one command per claim type, one positional value to check, JSON on stdout.
 
 ## Initial commands
 
 ```bash
 htrust info
-htrust verify mobile --phone +393331234567
-htrust check mobile --phone +393331234567 --level advanced
-htrust v email --email info@example.com
-htrust c ip --ip 8.8.8.8
-htrust verify url --url https://example.com
-htrust minio info
-htrust minio init
+htrust mobile +393331234567
+htrust mobile +393331234567 --detail
+htrust email info@example.com
+htrust ip 8.8.8.8
+htrust url https://example.com
 ```
+
+`--detail` selects the richer endpoint where the underlying API exposes both a base and an advanced check.
 
 ## Environment
 
 ```bash
 export OPENAPI_TOKEN=your-production-token
 export OPENAPI_SANDBOX_TOKEN=your-sandbox-token
-export HTRUST_MINIO_ENDPOINT=http://127.0.0.1:9000
-export HTRUST_MINIO_ACCESS_KEY=minioadmin
-export HTRUST_MINIO_SECRET_KEY=minioadmin
 ```
 
-## MinIO layout
+## Scope
 
-- `htrust-claims`: incoming claims to verify
-- `htrust-evidence`: raw evidence collected during verification
-- `htrust-assessments`: normalized trust outputs
-- `htrust-artifacts`: reports and exported files
+This first cut still wraps the current `trust.openapi.com` subset already available in `openapi-cli`:
 
-`htrust minio init` uses the `mc` client already available on the system to create the required buckets.
+- `mobile-start`
+- `mobile-advanced`
+- `email-start`
+- `email-advanced`
+- `ip-advanced`
+- `url-advanced`
+
+The long-term shape can expand to commands like `htrust iban ...` or `htrust vat ...`, but those endpoints are not wired in this first baseline yet.
