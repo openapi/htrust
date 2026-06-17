@@ -2,7 +2,6 @@ mod cli;
 mod client;
 mod commands;
 mod config;
-mod storage;
 
 use anyhow::Result;
 use clap::{CommandFactory, Parser};
@@ -23,11 +22,23 @@ async fn main() -> Result<()> {
 
     match command {
         Commands::Info => commands::info::execute(cli.sandbox),
-        Commands::Verify { command } => {
-            let config = Config::load(cli.sandbox)?;
-            let client = ApiClient::new(config)?;
-            commands::verify::execute(command, &client).await
+        Commands::Mobile(args) => {
+            run_trust(commands::trust::ClaimKind::Mobile, args, cli.sandbox).await
         }
-        Commands::Minio { command } => commands::minio::execute(command),
+        Commands::Email(args) => {
+            run_trust(commands::trust::ClaimKind::Email, args, cli.sandbox).await
+        }
+        Commands::Ip(args) => run_trust(commands::trust::ClaimKind::Ip, args, cli.sandbox).await,
+        Commands::Url(args) => run_trust(commands::trust::ClaimKind::Url, args, cli.sandbox).await,
     }
+}
+
+async fn run_trust(
+    kind: commands::trust::ClaimKind,
+    args: &commands::trust::TrustCommand,
+    sandbox: bool,
+) -> Result<()> {
+    let config = Config::load(sandbox)?;
+    let client = ApiClient::new(config)?;
+    commands::trust::execute(kind, args, &client).await
 }
