@@ -279,45 +279,68 @@ Unit tests live inside the source files under `src/` in `#[cfg(test)]` modules.
 cargo test
 ```
 
-### Bash integration test suite
+### Bash smoke tests (`tests/`)
 
-The project also includes a pure Bash test suite in `tests/`.
-Each command has its own self-contained test file that doubles as a usage example:
+The `tests/` directory contains simple, practical smoke tests. Each command has its own file that shows the real command being executed:
 
 ```text
 tests/
-├── run.sh            # orchestrates all tests
-├── lib.sh            # shared helpers
-├── test_info.sh      # htrust info examples
-├── test_mobile.sh    # htrust mobile examples
-├── test_email.sh     # htrust email examples
-├── test_ip.sh        # htrust ip examples
-└── test_url.sh       # htrust url examples
+├── run.sh            # runs all smoke tests
+├── test_info.sh      # htrust info in action
+├── test_mobile.sh    # htrust mobile in action
+├── test_email.sh     # htrust email in action
+├── test_ip.sh        # htrust ip in action
+└── test_url.sh       # htrust url in action
 ```
 
-Run all tests:
+Run smoke tests:
 
 ```bash
-make test
+make test-smoke
 ```
 
 or directly:
 
 ```bash
 ./tests/run.sh
-```
-
-Run a single command test:
-
-```bash
 ./tests/test_mobile.sh
 ```
 
-Each file:
+### Negative / side-case asserts (`tests/asserts/`)
 
-1. shows the intended usage in comments,
-2. checks missing-token and missing-argument errors,
-3. if `OPENAPI_SANDBOX_TOKEN` is set, performs a live sandbox call and validates JSON output.
+The `tests/asserts/` directory contains more formal assertions for error handling and edge cases:
+
+```text
+tests/asserts/
+├── run.sh                   # runs all assert tests
+├── lib.sh                   # tiny assert helpers
+├── test_info_asserts.sh     # info edge cases
+├── test_mobile_asserts.sh   # mobile error cases
+├── test_email_asserts.sh    # email error cases
+├── test_ip_asserts.sh       # ip error cases
+└── test_url_asserts.sh      # url error cases
+```
+
+Run assert tests:
+
+```bash
+make test-asserts
+```
+
+or directly:
+
+```bash
+./tests/asserts/run.sh
+./tests/asserts/test_mobile_asserts.sh
+```
+
+### Run everything
+
+```bash
+make test
+```
+
+This runs `cargo test`, the smoke suite and the assert suite.
 
 To run live tests against the sandbox:
 
@@ -357,13 +380,20 @@ make test
 │       ├── mod.rs       # command module exports
 │       └── trust.rs     # mobile/email/ip/url implementation
 └── tests/
-    ├── lib.sh           # shared test helpers
-    ├── run.sh           # test runner
-    ├── test_info.sh     # info command examples/tests
-    ├── test_mobile.sh   # mobile command examples/tests
-    ├── test_email.sh    # email command examples/tests
-    ├── test_ip.sh       # ip command examples/tests
-    └── test_url.sh      # url command examples/tests
+    ├── run.sh                 # smoke-test runner
+    ├── test_info.sh           # info command smoke test
+    ├── test_mobile.sh         # mobile command smoke test
+    ├── test_email.sh          # email command smoke test
+    ├── test_ip.sh             # ip command smoke test
+    ├── test_url.sh            # url command smoke test
+    └── asserts/
+        ├── run.sh             # assert-test runner
+        ├── lib.sh             # tiny assert helpers
+        ├── test_info_asserts.sh
+        ├── test_mobile_asserts.sh
+        ├── test_email_asserts.sh
+        ├── test_ip_asserts.sh
+        └── test_url_asserts.sh
 ```
 
 ---
