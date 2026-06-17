@@ -38,6 +38,8 @@ async fn run_trust(
     args: &commands::trust::TrustCommand,
     sandbox: bool,
 ) -> Result<()> {
+    // Validate the input locally before any token or network request is involved.
+    commands::trust::validate(kind, &args.value)?;
     let config = Config::load(sandbox)?;
     let client = ApiClient::new(config)?;
     commands::trust::execute(kind, args, &client).await
