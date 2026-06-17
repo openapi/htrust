@@ -27,8 +27,16 @@ if htrust email >/tmp/email-err 2>&1; then
   exit 1
 fi
 
+# Invalid format must be rejected locally, before any API call.
+if htrust email not-an-email >/tmp/email-err 2>&1; then
+  echo "FAIL: invalid email should be rejected locally" >&2
+  exit 1
+fi
+grep -q "invalid email format" /tmp/email-err
+
 # Live sandbox call, only if a token is available.
 if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox email info@example.com
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox email info@example.com --detail
+  OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox email info@example.com --json
 fi

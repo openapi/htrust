@@ -27,8 +27,16 @@ if htrust mobile >/tmp/mobile-err 2>&1; then
   exit 1
 fi
 
+# Invalid format must be rejected locally, before any API call.
+if htrust mobile not-a-number >/tmp/mobile-err 2>&1; then
+  echo "FAIL: invalid mobile should be rejected locally" >&2
+  exit 1
+fi
+grep -q "invalid mobile format" /tmp/mobile-err
+
 # Live sandbox call, only if a token is available.
 if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox mobile +393331234567
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox mobile +393331234567 --detail
+  OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox mobile +393331234567 --json
 fi

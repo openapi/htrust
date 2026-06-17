@@ -27,8 +27,16 @@ if htrust ip >/tmp/ip-err 2>&1; then
   exit 1
 fi
 
+# Invalid format must be rejected locally, before any API call.
+if htrust ip not-an-ip >/tmp/ip-err 2>&1; then
+  echo "FAIL: invalid ip should be rejected locally" >&2
+  exit 1
+fi
+grep -q "invalid ip format" /tmp/ip-err
+
 # Live sandbox call, only if a token is available.
 if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox ip 8.8.8.8
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox ip 8.8.8.8 --detail
+  OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox ip 8.8.8.8 --json
 fi

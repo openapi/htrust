@@ -27,8 +27,16 @@ if htrust url >/tmp/url-err 2>&1; then
   exit 1
 fi
 
+# Invalid format must be rejected locally, before any API call.
+if htrust url not-a-url >/tmp/url-err 2>&1; then
+  echo "FAIL: invalid url should be rejected locally" >&2
+  exit 1
+fi
+grep -q "invalid url format" /tmp/url-err
+
 # Live sandbox call, only if a token is available.
 if [ -n "${OPENAPI_SANDBOX_TOKEN:-}" ]; then
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox url https://example.com
   OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox url https://example.com --detail
+  OPENAPI_SANDBOX_TOKEN="$OPENAPI_SANDBOX_TOKEN" htrust --sandbox url https://example.com --json
 fi
