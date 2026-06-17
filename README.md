@@ -282,6 +282,18 @@ cargo test
 ### Bash integration test suite
 
 The project also includes a pure Bash test suite in `tests/`.
+Each command has its own self-contained test file that doubles as a usage example:
+
+```text
+tests/
+├── run.sh            # orchestrates all tests
+├── lib.sh            # shared helpers
+├── test_info.sh      # htrust info examples
+├── test_mobile.sh    # htrust mobile examples
+├── test_email.sh     # htrust email examples
+├── test_ip.sh        # htrust ip examples
+└── test_url.sh       # htrust url examples
+```
 
 Run all tests:
 
@@ -295,14 +307,17 @@ or directly:
 ./tests/run.sh
 ```
 
-The suite:
+Run a single command test:
 
-1. builds the release binary,
-2. checks `--help` and `--version`,
-3. runs `htrust info`,
-4. verifies that trust commands fail cleanly when tokens are missing,
-5. validates argument parsing errors,
-6. if `OPENAPI_SANDBOX_TOKEN` is set, performs a live sandbox call and validates JSON output.
+```bash
+./tests/test_mobile.sh
+```
+
+Each file:
+
+1. shows the intended usage in comments,
+2. checks missing-token and missing-argument errors,
+3. if `OPENAPI_SANDBOX_TOKEN` is set, performs a live sandbox call and validates JSON output.
 
 To run live tests against the sandbox:
 
@@ -342,8 +357,13 @@ make test
 │       ├── mod.rs       # command module exports
 │       └── trust.rs     # mobile/email/ip/url implementation
 └── tests/
-    ├── lib.sh           # test helpers
-    └── run.sh           # test runner
+    ├── lib.sh           # shared test helpers
+    ├── run.sh           # test runner
+    ├── test_info.sh     # info command examples/tests
+    ├── test_mobile.sh   # mobile command examples/tests
+    ├── test_email.sh    # email command examples/tests
+    ├── test_ip.sh       # ip command examples/tests
+    └── test_url.sh      # url command examples/tests
 ```
 
 ---

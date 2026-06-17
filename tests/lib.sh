@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Test helpers for the htrust Bash test suite.
-# This file is sourced by run.sh; it is not meant to be executed directly.
+# Each test_*.sh file sources this file and uses its helpers.
 
 set -euo pipefail
 
@@ -8,20 +8,30 @@ FAILED=0
 PASSED=0
 SKIPPED=0
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+HTRUST="$PROJECT_ROOT/target/release/htrust"
+
 # Colors (disabled when NO_COLOR is set or output is not a TTY)
 if [ -t 1 ] && [ -z "${NO_COLOR:-}" ]; then
   C_RED='\033[0;31m'
   C_GREEN='\033[0;32m'
   C_YELLOW='\033[0;33m'
   C_BLUE='\033[0;34m'
+  C_CYAN='\033[0;36m'
   C_RESET='\033[0m'
 else
   C_RED=''
   C_GREEN=''
   C_YELLOW=''
   C_BLUE=''
+  C_CYAN=''
   C_RESET=''
 fi
+
+section() {
+  printf "\n${C_CYAN}▶ %s${C_RESET}\n" "$*"
+}
 
 log_info() {
   printf "${C_BLUE}INFO${C_RESET}  %s\n" "$*"
@@ -46,6 +56,14 @@ summary() {
   printf "\n"
   printf "Results: %s passed, %s failed, %s skipped\n" "$PASSED" "$FAILED" "$SKIPPED"
   [ "$FAILED" -eq 0 ]
+}
+
+# Ensure the release binary exists; build it if necessary.
+require_binary() {
+  if [ ! -x "$HTRUST" ]; then
+    log_info "Building release binary..."
+    (cd "$PROJECT_ROOT" && cargo build --release)
+  fi
 }
 
 # Run a command, capturing stdout and stderr separately.
